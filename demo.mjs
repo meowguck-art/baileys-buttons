@@ -128,7 +128,14 @@ async function main() {
       console.log('✅ Connected as', sock.user.id);
       if (!demoSent) {
         demoSent = true;
-        const target = targetArg || sock.user.id; // default: self-chat
+        // sock.user.id includes a device suffix (e.g. 972...:8@s.whatsapp.net)
+        // which WhatsApp rejects for sending — normalize to a bare chat JID.
+        const normalizeJid = (j) => {
+          j = String(j).split(':')[0]; // strip device suffix
+          return j.includes('@') ? j : `${j}@s.whatsapp.net`;
+        };
+        const target = targetArg ? normalizeJid(targetArg) : normalizeJid(sock.user.id);
+        console.log('Target JID:', target);
         await sleep(1000);
         try {
           await runDemo(sock, target);
