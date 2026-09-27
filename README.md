@@ -4,6 +4,17 @@ Send WhatsApp **interactive buttons, dropdown lists and polls** with
 [Baileys](https://github.com/WhiskeySockets/Baileys), without modifying
 Baileys' source.
 
+## Files
+
+| File | For |
+|---|---|
+| `baileys-buttons.mjs` | ES modules (`import`) — recommended |
+| `baileys-buttons.cjs` | CommonJS (`require`) |
+| `demo.mjs` | Standalone verification script (ESM) |
+| `package.json` | Metadata with `exports` map for both builds |
+
+Both builds export the exact same API.
+
 ## Why this exists
 
 Baileys' own `sock.sendMessage()` has no branch for `interactiveMessage`
@@ -23,7 +34,7 @@ message exactly the way the official client does:
 
 ## Install
 
-Copy `baileys-buttons.js` into your project (it only needs
+Copy the file matching your module system into your project (it only needs
 `@whiskeysockets/baileys` as a peer dependency):
 
 ```js
@@ -37,18 +48,9 @@ const {
   sendInteractive,
   getButtonReplyId,
   getListReplyId,
-} = require('./baileys-buttons');
+} = require('./baileys-buttons.cjs');
 ```
 
-**ES modules:** use `baileys-buttons.mjs` instead (same API, `import`/`export`):
-
-```js
-import { sendButtons, sendUrlButtons } from './baileys-buttons.mjs';
-```
-
-If your project uses ES modules (`"type": "module"` in package.json),
-the `.cjs` files will NOT work when your installed Baileys copy is ESM-only —
-use the `.mjs` files.
 
 ## API — one ready function per type
 
@@ -134,7 +136,7 @@ await sendPoll(sock, jid, {
 For mixed-type messages, build buttons with the builders and pass them raw:
 
 ```js
-const { sendInteractive, quickReply, ctaUrl, ctaCopy } = require('./baileys-buttons');
+const { sendInteractive, quickReply, ctaUrl, ctaCopy } = require('./baileys-buttons.cjs');
 
 await sendInteractive(sock, jid, {
   text: 'Mixed actions:',
