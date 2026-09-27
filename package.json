@@ -1,0 +1,1 @@
+{"description":"Helper for sending WhatsApp interactive buttons, lists and polls with Baileys (WhiskeySockets)","license":"MIT","main":"baileys-buttons.js","name":"baileys-buttons","peerDependencies":{"@whiskeysockets/baileys":">=6.7.0"},"version":"1.0.0"}
