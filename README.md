@@ -40,6 +40,16 @@ const {
 } = require('./baileys-buttons');
 ```
 
+**ES modules:** use `baileys-buttons.mjs` instead (same API, `import`/`export`):
+
+```js
+import { sendButtons, sendUrlButtons } from './baileys-buttons.mjs';
+```
+
+If your project uses ES modules (`"type": "module"` in package.json),
+the `.cjs` files will NOT work when your installed Baileys copy is ESM-only —
+use the `.mjs` files.
+
 ## API — one ready function per type
 
 ### `sendButtons` — quick-reply buttons (up to 3)
