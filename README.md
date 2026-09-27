@@ -160,6 +160,9 @@ sock.ev.on('messages.upsert', async ({ messages }) => {
 
 ## Notes
 
+- If your project uses ES modules (`"type": "module"` in package.json),
+  rename both files to `.cjs` (`baileys-buttons.cjs`, `demo.cjs`) and run
+  `node demo.cjs` — `require` does not work in ESM scope.
 - `quick_reply` buttons render grayed-out/disabled in **self-chat** ("message
   yourself") — WhatsApp disables reply-buttons on messages you sent yourself.
   They are fully tappable for the recipient in a normal chat. `cta_*`
