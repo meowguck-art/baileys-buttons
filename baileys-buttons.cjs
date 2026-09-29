@@ -104,7 +104,7 @@ function singleSelectButton(buttonTitle, sections) {
 // Binary wrapper nodes WhatsApp requires around interactive messages.
 // ---------------------------------------------------------------------------
 
-function interactiveNodes(jid) {
+function interactiveNodes(jid, ai = true) {
   const nodes = [
     {
       tag: 'biz',
@@ -123,8 +123,9 @@ function interactiveNodes(jid) {
       ],
     },
   ];
-  // Private (non-group) chats also need the bot node (renders the AI badge)
-  if (!String(jid).endsWith('@g.us')) {
+  // Private (non-group) chats get the bot node (renders the AI badge) —
+  // pass ai: false to skip it and send without the badge.
+  if (ai && !String(jid).endsWith('@g.us')) {
     nodes.push({ tag: 'bot', attrs: { biz_bot: '1' } });
   }
   return nodes;
@@ -142,7 +143,7 @@ function interactiveNodes(jid) {
 async function sendInteractive(
   sock,
   jid,
-  { text, footer = '', title = '', buttons, quoted } = {}
+  { text, footer = '', title = '', buttons, quoted, ai = true } = {}
 ) {
   if (!text) throw new Error('sendInteractive: text is required');
   if (!Array.isArray(buttons) || buttons.length === 0) {
@@ -179,7 +180,7 @@ async function sendInteractive(
 
   await sock.relayMessage(jid, msg.message, {
     messageId: msg.key.id,
-    additionalNodes: interactiveNodes(jid),
+    additionalNodes: interactiveNodes(jid, ai),
   });
   return msg.key;
 }
@@ -191,7 +192,7 @@ async function sendInteractive(
 async function sendButtons(
   sock,
   jid,
-  { text, footer = '', title = '', buttons, quoted } = {}
+  { text, footer = '', title = '', buttons, quoted, ai = true } = {}
 ) {
   if (!Array.isArray(buttons) || buttons.length === 0) {
     throw new Error('sendButtons: buttons must be a non-empty array');
@@ -204,6 +205,7 @@ async function sendButtons(
     footer,
     title,
     quoted,
+    ai,
     buttons: buttons.map((b) => quickReply(b.id, b.displayText)),
   });
 }
@@ -214,7 +216,7 @@ async function sendButtons(
 async function sendList(
   sock,
   jid,
-  { text, footer = '', title = '', buttonText, sections, quoted } = {}
+  { text, footer = '', title = '', buttonText, sections, quoted, ai = true } = {}
 ) {
   if (!buttonText) throw new Error('sendList: buttonText is required');
   if (!Array.isArray(sections) || sections.length === 0) {
@@ -225,6 +227,7 @@ async function sendList(
     footer,
     title,
     quoted,
+    ai,
     buttons: [singleSelectButton(buttonText, sections)],
   });
 }
@@ -236,7 +239,7 @@ async function sendList(
 async function sendUrlButtons(
   sock,
   jid,
-  { text, footer = '', title = '', buttons, quoted } = {}
+  { text, footer = '', title = '', buttons, quoted, ai = true } = {}
 ) {
   if (!Array.isArray(buttons) || buttons.length === 0) {
     throw new Error('sendUrlButtons: buttons must be a non-empty array');
@@ -246,6 +249,7 @@ async function sendUrlButtons(
     footer,
     title,
     quoted,
+    ai,
     buttons: buttons.map((b) => ctaUrl(b.displayText, b.url)),
   });
 }
@@ -257,7 +261,7 @@ async function sendUrlButtons(
 async function sendCopyButtons(
   sock,
   jid,
-  { text, footer = '', title = '', buttons, quoted } = {}
+  { text, footer = '', title = '', buttons, quoted, ai = true } = {}
 ) {
   if (!Array.isArray(buttons) || buttons.length === 0) {
     throw new Error('sendCopyButtons: buttons must be a non-empty array');
@@ -267,6 +271,7 @@ async function sendCopyButtons(
     footer,
     title,
     quoted,
+    ai,
     buttons: buttons.map((b) => ctaCopy(b.displayText, b.copyCode)),
   });
 }
@@ -278,7 +283,7 @@ async function sendCopyButtons(
 async function sendCallButtons(
   sock,
   jid,
-  { text, footer = '', title = '', buttons, quoted } = {}
+  { text, footer = '', title = '', buttons, quoted, ai = true } = {}
 ) {
   if (!Array.isArray(buttons) || buttons.length === 0) {
     throw new Error('sendCallButtons: buttons must be a non-empty array');
@@ -288,6 +293,7 @@ async function sendCallButtons(
     footer,
     title,
     quoted,
+    ai,
     buttons: buttons.map((b) => ctaCall(b.displayText, b.phoneNumber)),
   });
 }
@@ -320,6 +326,50 @@ async function sendPoll(
 }
 
 // ---------------------------------------------------------------------------
+/**
+ * Footer-only interactive message (no buttons).
+ * WhatsApp renders body + footer text. Pass `ai: false` to send
+ * without the AI badge (skips the `bot` binary node).
+ */
+async function sendFooterOnly(
+  sock,
+  jid,
+  { text, footer = '', title = '', quoted, ai = true } = {}
+) {
+  if (!text) throw new Error('sendFooterOnly: text is required');
+
+  const msg = generateWAMessageFromContent(
+    jid,
+    {
+      viewOnceMessage: {
+        message: {
+          messageContextInfo: {
+            deviceListMetadata: {},
+            deviceListMetadataVersion: 2,
+          },
+          interactiveMessage: proto.Message.InteractiveMessage.create({
+            header: proto.Message.InteractiveMessage.Header.create({
+              title,
+              hasMediaAttachment: false,
+            }),
+            body: proto.Message.InteractiveMessage.Body.create({ text }),
+            footer: proto.Message.InteractiveMessage.Footer.create({ text: footer }),
+            nativeFlowMessage:
+              proto.Message.InteractiveMessage.NativeFlowMessage.create({ buttons: [] }),
+          }),
+        },
+      },
+    },
+    { quoted, userJid: sock.user?.id }
+  );
+
+  await sock.relayMessage(jid, msg.message, {
+    messageId: msg.key.id,
+    additionalNodes: interactiveNodes(jid, ai),
+  });
+  return msg.key;
+}
+
 // Reply parsing
 // ---------------------------------------------------------------------------
 
@@ -366,6 +416,7 @@ module.exports = {
   sendCallButtons, // cta_call
   sendList, // single_select dropdown
   sendPoll, // native poll
+  sendFooterOnly, // footer text, no buttons (ai: false skips the AI badge)
   // reply parsing
   getButtonReplyId,
   getListReplyId,

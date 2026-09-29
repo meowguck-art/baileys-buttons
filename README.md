@@ -45,6 +45,7 @@ const {
   sendCallButtons,
   sendList,
   sendPoll,
+  sendFooterOnly,
   sendInteractive,
   getButtonReplyId,
   getListReplyId,
@@ -53,6 +54,12 @@ const {
 
 
 ## API — one ready function per type
+
+**AI badge:** in 1:1 chats the helper adds the `bot` binary node, which makes
+WhatsApp show the AI ✨ badge on the message. Pass `ai: false` to any sender
+(`sendButtons`, `sendList`, `sendUrlButtons`, `sendCopyButtons`,
+`sendCallButtons`, `sendInteractive`, `sendFooterOnly`) to send without the
+badge. Group chats never get the badge.
 
 ### `sendButtons` — quick-reply buttons (up to 3)
 
@@ -118,6 +125,17 @@ await sendList(sock, jid, {
       ],
     },
   ],
+});
+```
+
+### `sendFooterOnly` — footer text, no buttons
+
+```js
+await sendFooterOnly(sock, jid, {
+  text: 'Just a message',
+  footer: 'small footer text',  // optional
+  title: 'optional header',     // optional
+  ai: false,                    // optional: skip the AI ✨ badge
 });
 ```
 
