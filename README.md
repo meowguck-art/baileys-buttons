@@ -39,23 +39,21 @@ the interactive `single_select` variant does not render on iOS.
 
 ## Install
 
-Copy the file matching your module system into your project (it only needs
-`@whiskeysockets/baileys` as a peer dependency):
+```bash
+npm install baileys-buttons
+```
+
+It only needs `@whiskeysockets/baileys` as a peer dependency:
 
 ```js
-const {
-  sendButtons,
-  sendUrlButtons,
-  sendCopyButtons,
-  sendCallButtons,
-  sendList,
-  sendPoll,
-  sendFooterOnly,
-  sendInteractive,
-  getButtonReplyId,
-  getListReplyId,
-} = require('./baileys-buttons.cjs');
+// ESM
+import { sendButtons, sendList } from 'baileys-buttons';
+// CommonJS
+const { sendButtons, sendList } = require('baileys-buttons');
 ```
+
+Prefer a single file? Copy `baileys-buttons.mjs` (ESM) or `baileys-buttons.cjs`
+(CommonJS) directly into your project instead.
 
 
 ## API — one ready function per type
@@ -171,7 +169,7 @@ await sendPoll(sock, jid, {
 For mixed-type messages, build buttons with the builders and pass them raw:
 
 ```js
-const { sendInteractive, quickReply, ctaUrl, ctaCopy } = require('./baileys-buttons.cjs');
+const { sendInteractive, quickReply, ctaUrl, ctaCopy } = require('baileys-buttons');
 
 await sendInteractive(sock, jid, {
   text: 'Mixed actions:',
