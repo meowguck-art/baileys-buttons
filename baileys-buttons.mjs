@@ -22,6 +22,9 @@
  * and Android). `sendInteractiveList` sends the native_flow single_select
  * variant (Android only — does not render on iOS).
  *
+ * Plus: `sendRequestPhoneNumber` (ask the recipient to share their number),
+ * `sendLocation` (send a map pin).
+ *
  * Usage:
  *   const { sendButtons, sendUrlButtons, sendCopyButtons, sendCallButtons,
  *           sendList, sendPoll, getButtonReplyId } = import ... from './baileys-buttons.mjs';
@@ -386,6 +389,59 @@ async function sendPoll(
   return msg.key;
 }
 
+/**
+ * Ask the recipient to share their phone number.
+ * Sends the native `requestPhoneNumberMessage` — WhatsApp shows the
+ * recipient a system "share phone number" prompt.
+ *
+ * NOTE: this was previously tried via baileys-easy and stripped after
+ * failed live tests, so verify on a real phone before relying on it.
+ * When the recipient shares, tell me what message arrives and I'll add
+ * a reply parser for it.
+ */
+async function sendRequestPhoneNumber(sock, jid, { quoted } = {}) {
+  const msg = generateWAMessageFromContent(
+    jid,
+    { requestPhoneNumberMessage: {} },
+    { quoted, userJid: sock.user?.id }
+  );
+  await sock.relayMessage(jid, msg.message, { messageId: msg.key.id });
+  return msg.key;
+}
+
+/**
+ * Send a location (map pin).
+ * Note: WhatsApp has no API to *request* the recipient's location —
+ * this sends the bot's location. There is no request-location message
+ * in the protocol.
+ */
+async function sendLocation(
+  sock,
+  jid,
+  { latitude, longitude, name = '', address = '', quoted } = {}
+) {
+  if (typeof latitude !== 'number' || typeof longitude !== 'number') {
+    throw new Error('sendLocation: latitude and longitude (numbers) are required');
+  }
+  if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
+    throw new Error('sendLocation: latitude must be -90..90, longitude -180..180');
+  }
+  const msg = generateWAMessageFromContent(
+    jid,
+    {
+      locationMessage: {
+        degreesLatitude: latitude,
+        degreesLongitude: longitude,
+        name: name || undefined,
+        address: address || undefined,
+      },
+    },
+    { quoted, userJid: sock.user?.id }
+  );
+  await sock.relayMessage(jid, msg.message, { messageId: msg.key.id });
+  return msg.key;
+}
+
 // ---------------------------------------------------------------------------
 /**
  * Footer-only interactive message (no buttons).
@@ -478,6 +534,8 @@ export {
   sendList, // classic ListMessage dropdown (iOS-compatible)
   sendInteractiveList, // native_flow single_select dropdown (Android only)
   sendPoll, // native poll
+  sendRequestPhoneNumber, // ask the recipient to share their number
+  sendLocation, // send a map pin
   sendFooterOnly, // footer text, no buttons (ai: false skips the AI badge)
   // reply parsing
   getButtonReplyId,

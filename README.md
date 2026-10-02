@@ -164,6 +164,32 @@ await sendPoll(sock, jid, {
 });
 ```
 
+### `sendRequestPhoneNumber` — ask for the recipient's number
+
+Sends the native `requestPhoneNumberMessage` — WhatsApp shows the recipient
+a system "share phone number" prompt.
+
+```js
+await sendRequestPhoneNumber(sock, jid);
+```
+
+> Verify on a real phone before relying on it — an earlier attempt at this
+> (in `baileys-easy`) was stripped after failed live tests.
+
+### `sendLocation` — send a map pin
+
+```js
+await sendLocation(sock, jid, {
+  latitude: 32.0853,
+  longitude: 34.7818,
+  name: 'Tel Aviv',    // optional
+  address: 'Israel',   // optional
+});
+```
+
+> WhatsApp has no API to *request* the recipient's location — this sends
+> the bot's location. There is no request-location message in the protocol.
+
 ### `sendInteractive` — mix any types in one message
 
 For mixed-type messages, build buttons with the builders and pass them raw:
