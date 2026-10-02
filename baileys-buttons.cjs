@@ -18,6 +18,10 @@
  *   - cta_call : tap to dial a phone number
  * Plus: native polls via `sendPoll`.
  *
+ * Lists: `sendList` sends the classic ListMessage proto (renders on iOS
+ * and Android). `sendInteractiveList` sends the native_flow single_select
+ * variant (Android only — does not render on iOS).
+ *
  * Usage:
  *   const { sendButtons, sendUrlButtons, sendCopyButtons, sendCallButtons,
  *           sendList, sendPoll, getButtonReplyId } = require('./baileys-buttons');
@@ -211,7 +215,16 @@ async function sendButtons(
 }
 
 /**
- * Dropdown list message (menu with sections).
+ * Dropdown list message (menu with sections) — iOS-compatible.
+ *
+ * The interactive native_flow `single_select` list does NOT render on iOS.
+ * This sends the classic `ListMessage` proto with `ListType.SINGLE_SELECT`
+ * and the `<biz><list type="product_list" v="2"/></biz>` relay node instead —
+ * without the viewOnceMessage wrapper. Tapping a row returns its `id`,
+ * readable with `getListReplyId()` (listResponseMessage.singleSelectReply).
+ *
+ * `ai` is accepted for API consistency but has no effect here — classic
+ * lists never show the AI badge (no `bot` binary node is sent).
  */
 async function sendList(
   sock,
@@ -221,6 +234,57 @@ async function sendList(
   if (!buttonText) throw new Error('sendList: buttonText is required');
   if (!Array.isArray(sections) || sections.length === 0) {
     throw new Error('sendList: sections must be a non-empty array');
+  }
+
+  const msg = generateWAMessageFromContent(
+    jid,
+    {
+      // Classic ListMessage — sent WITHOUT the viewOnceMessage wrapper.
+      listMessage: proto.Message.ListMessage.create({
+        title: title || undefined,
+        description: text,
+        buttonText,
+        listType: proto.Message.ListMessage.ListType.SINGLE_SELECT,
+        sections: sections.map((s) => ({
+          title: s.title || '',
+          rows: s.rows.map((r) => ({
+            title: r.title,
+            description: r.description || '',
+            rowId: r.id,
+          })),
+        })),
+        footerText: footer || undefined,
+      }),
+    },
+    { quoted, userJid: sock.user?.id }
+  );
+
+  await sock.relayMessage(jid, msg.message, {
+    messageId: msg.key.id,
+    additionalNodes: [
+      {
+        tag: 'biz',
+        attrs: {},
+        content: [{ tag: 'list', attrs: { type: 'product_list', v: '2' } }],
+      },
+    ],
+  });
+  return msg.key;
+}
+
+/**
+ * Dropdown list via interactive native_flow `single_select`.
+ * Same options as `sendList`. Renders on Android; does NOT render on iOS —
+ * use `sendList` for the iOS-compatible classic list.
+ */
+async function sendInteractiveList(
+  sock,
+  jid,
+  { text, footer = '', title = '', buttonText, sections, quoted, ai = true } = {}
+) {
+  if (!buttonText) throw new Error('sendInteractiveList: buttonText is required');
+  if (!Array.isArray(sections) || sections.length === 0) {
+    throw new Error('sendInteractiveList: sections must be a non-empty array');
   }
   return sendInteractive(sock, jid, {
     text,
@@ -414,7 +478,8 @@ module.exports = {
   sendUrlButtons, // cta_url
   sendCopyButtons, // cta_copy
   sendCallButtons, // cta_call
-  sendList, // single_select dropdown
+  sendList, // classic ListMessage dropdown (iOS-compatible)
+  sendInteractiveList, // native_flow single_select dropdown (Android only)
   sendPoll, // native poll
   sendFooterOnly, // footer text, no buttons (ai: false skips the AI badge)
   // reply parsing

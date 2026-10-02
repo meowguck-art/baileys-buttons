@@ -32,6 +32,11 @@ message exactly the way the official client does:
   native_flow(v=9,name=mixed)` and `bot(biz_bot=1)` in private chats
 - `userJid: sock.user.id` passed to the message generator
 
+Dropdown lists (`sendList`) use the classic `ListMessage` proto instead:
+`generateWAMessageFromContent` + `relayMessage` with the
+`biz → list(type=product_list,v=2)` node and no `viewOnceMessage` wrapper —
+the interactive `single_select` variant does not render on iOS.
+
 ## Install
 
 Copy the file matching your module system into your project (it only needs
@@ -110,7 +115,13 @@ await sendCallButtons(sock, jid, {
 });
 ```
 
-### `sendList` — dropdown menu with sections
+### `sendList` — dropdown menu with sections (iOS-compatible)
+
+Sends the classic `ListMessage` proto (`ListType.SINGLE_SELECT`) with the
+`<biz><list type="product_list" v="2"/></biz>` relay node — no
+`viewOnceMessage` wrapper. The interactive `single_select` (native_flow)
+list does **not** render on iOS, so this is the default. Tapping a row
+returns its `id`; read it with `getListReplyId()`.
 
 ```js
 await sendList(sock, jid, {
@@ -127,6 +138,12 @@ await sendList(sock, jid, {
   ],
 });
 ```
+
+### `sendInteractiveList` — dropdown via native_flow `single_select`
+
+Same options as `sendList`, but uses the interactive `single_select` button.
+Renders on Android; does **not** render on iOS. Kept for cases where the
+interactive variant is preferred.
 
 ### `sendFooterOnly` — footer text, no buttons
 
