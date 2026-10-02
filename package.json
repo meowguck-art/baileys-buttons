@@ -1,5 +1,5 @@
 {
-  "description": "Send WhatsApp interactive buttons, lists and polls with Baileys (WhiskeySockets) — without touching Baileys' source",
+  "description": "Send WhatsApp interactive buttons, lists and polls with Baileys (WhiskeySockets) \u2014 without touching Baileys' source",
   "exports": {
     ".": {
       "import": "./baileys-buttons.mjs",
@@ -21,7 +21,7 @@
     "@whiskeysockets/baileys": ">=6.7.0 || >=7.0.0-rc"
   },
   "types": "./baileys-buttons.mjs",
-  "version": "1.3.1",
+  "version": "1.3.2",
   "files": [
     "baileys-buttons.mjs",
     "baileys-buttons.cjs",

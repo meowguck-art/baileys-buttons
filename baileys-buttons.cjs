@@ -461,12 +461,16 @@ async function sendFooterOnly(
 
 /**
  * Extract the pressed button id from an interactive reply.
- * Handles quick_reply taps (nativeFlowResponseMessage.paramsJson)
- * and single_select picks (singleSelectReply) on some clients.
+ * Handles quick_reply taps (nativeFlowResponseMessage.paramsJson),
+ * single_select picks (singleSelectReply) on some clients, and
+ * templateButtonReplyMessage (some clients send quick_reply taps
+ * back in this shape, with the id in `selectedId`).
  * Returns the id string, or null if not a button reply.
  */
 function getButtonReplyId(message) {
   try {
+    const t = message?.templateButtonReplyMessage?.selectedId;
+    if (t) return t;
     const r = message?.interactiveResponseMessage;
     if (!r) return null;
     const params = r?.nativeFlowResponseMessage?.paramsJson;
